@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./Tree.sol";
+import './Tree.sol';
 
 contract SeedToken is ERC20 {
     using Counters for Counters.Counter;
@@ -26,6 +26,8 @@ contract SeedToken is ERC20 {
         uint256 lastWateredTimestamp;
         uint256 plantedTimestamp;
     }
+
+    address private _treeContractAddress;
 
     constructor() ERC20("Seed", "SEED") {
         _mint(msg.sender, 1 * 10**18);
@@ -100,7 +102,14 @@ contract SeedToken is ERC20 {
         return false;
     }
 
-    function generateTreeNFT(uint256 x, uint256 y) public {
+    function setTreeContractAddress(address treeContractAddress) external {
+        require(_treeContractAddress == address(0), "Tree contract address has already been set.");
+        require(treeContractAddress != address(0), "Invalid tree contract address.");
+        _treeContractAddress = treeContractAddress;
+    }
+
+    function generateTreeNFT(uint256 x, uint256 y) external {
+        require(_treeContractAddress != address(0), "Tree contract address has not been set.");
         require(_seeds[x][y].isPlanted, "No seed planted at these coordinates.");
         require(!_isTree[x][y], "A tree has already been grown at these coordinates.");
 
@@ -115,12 +124,8 @@ contract SeedToken is ERC20 {
         );
 
         _isTree[x][y] = true;
-        emit TreeGeneratedAt(x, y, msg.sender, _generateTreeNFT(msg.sender));
-    }
-
-    function _generateTreeNFT(address owner) private returns (uint256) {
-        Tree treeContract = new Tree();
-        uint256 tokenId = treeContract.createTreeNFT(owner);
-        return tokenId;
+        Tree treeContract = Tree(_treeContractAddress);
+        uint256 tokenId = treeContract.createTreeNFT(msg.sender);
+        emit TreeGeneratedAt(x, y, msg.sender, tokenId);
     }
 }

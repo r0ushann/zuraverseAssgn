@@ -8,15 +8,21 @@ contract Tree is ERC721 {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
 
-    constructor() ERC721("Tree", "TREE") {}
+    address private _seedTokenContract;
+
+    constructor(address seedTokenContract) ERC721("Tree", "TREE") {
+        _seedTokenContract = seedTokenContract;
+    }
 
     event TreeNFTGenerated(uint256 tokenId, address indexed owner);
 
     function createTreeNFT(address owner) external returns (uint256) {
+        require(msg.sender == _seedTokenContract, "Only the SeedToken contract can call this function.");
+
         uint256 tokenId = _tokenIdCounter.current();
         _safeMint(owner, tokenId);
         _tokenIdCounter.increment();
-        emit TreeNFTGenerated(tokenId, owner);
+        emit TreeNFTGenerated(tokenId, owner); 
         return tokenId;
     }
 }
