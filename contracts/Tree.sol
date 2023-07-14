@@ -13,7 +13,7 @@ contract Tree is ERC721 {
     constructor(address seedTokenContract) ERC721("Tree", "TREE") {
         _seedTokenContract = seedTokenContract;
     }
-
+        // event when NFT is generated
     event TreeNFTGenerated(uint256 tokenId, address indexed owner);
 
     function createTreeNFT(address owner) external returns (uint256) {
