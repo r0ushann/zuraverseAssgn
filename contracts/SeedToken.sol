@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import './Tree.sol';
+import "./Tree.sol";
 
 contract SeedToken is ERC20 {
     using Counters for Counters.Counter;
@@ -102,11 +102,12 @@ contract SeedToken is ERC20 {
         return false;
     }
 
-    function setTreeContractAddress(address treeContractAddress) external {
-        require(_treeContractAddress == address(0), "Tree contract address has already been set.");
-        require(treeContractAddress != address(0), "Invalid tree contract address.");
-        _treeContractAddress = treeContractAddress;
-    }
+   function setTreeContractAddress(address treeContractAddress) external {
+    require(_treeContractAddress == address(0), "Tree contract address has already been set.");
+    require(treeContractAddress != address(0), "Invalid tree contract address.");
+    _treeContractAddress = treeContractAddress;
+}
+
 
     function generateTreeNFT(uint256 x, uint256 y) external {
         require(_treeContractAddress != address(0), "Tree contract address has not been set.");
