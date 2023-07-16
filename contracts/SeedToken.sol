@@ -9,17 +9,21 @@ contract SeedToken is ERC20 {
     using Counters for Counters.Counter;
     Counters.Counter private _dailyMintCounter;
 
+// mapping with seeds and user address
     mapping(address => uint256) private _lastMintTimestamp;
     mapping(uint256 => mapping(uint256 => Seed)) private _seeds;
     mapping(uint256 => mapping(uint256 => bool)) private _isTree;
 
     uint256 private constant SECONDS_IN_A_DAY = 86400;
 
+// event fire whenever state is changed 
     event SeedPlanted(address indexed user, uint256 x, uint256 y);
     event WaterAdded(address indexed caller, uint256 x, uint256 y);
     event SeedTurnedSapling(uint256 x, uint256 y);
     event TreeGeneratedAt(uint256 x, uint256 y, address indexed user, uint256 tokenId);
 
+
+// struct for seed with undergoing events
     struct Seed {
         bool isPlanted;
         bool isWatered;
@@ -27,12 +31,15 @@ contract SeedToken is ERC20 {
         uint256 plantedTimestamp;
     }
 
+// deployed Tree.sol address
     address private _treeContractAddress;
 
+//  Name and Symbol for the seed Token
     constructor() ERC20("Seed", "SEED") {
         _mint(msg.sender, 1 * 10**18);
     }
 
+// Mint function for seed Token, can only be minted once a day
     function mintSeed() external {
         require(
             _lastMintTimestamp[msg.sender] + SECONDS_IN_A_DAY <= block.timestamp,
@@ -49,6 +56,10 @@ contract SeedToken is ERC20 {
         _lastMintTimestamp[msg.sender] = block.timestamp;
     }
 
+/* 
+function to plant seed at fixed and unique coordinates on the virtual map takes input (x,y) 
+and marks the useraddress who is calling the function,also emits an event
+*/
     function plantSeed(uint256 x, uint256 y) external {
         require(balanceOf(msg.sender) >= 1, "You must have at least 1 seed token to plant.");
         require(!_seeds[x][y].isPlanted, "A seed has already been planted at these coordinates.");
@@ -59,6 +70,10 @@ contract SeedToken is ERC20 {
         emit SeedPlanted(msg.sender, x, y);
     }
 
+/* 
+    function for calling add water to the seed at the specific co-ordinates x,y
+    Here, only the useraddress used to call the plantSeed function at the x,y can call the addWater functionn
+*/
     function addWater(address _address, uint256 x, uint256 y) external {
         require(msg.sender == _address, "Only a specific address can call this function.");
         require(_seeds[x][y].isPlanted, "There is no seed planted at these coordinates.");
@@ -69,16 +84,25 @@ contract SeedToken is ERC20 {
         emit WaterAdded(msg.sender, x, y);
     }
 
+
+/* 
+This function takes care of the life of seed, if dead it remove the seed 
+from the x,y coordinates and allows to plant new seed at the same coordinate
+*/
     function checkAndRemoveSeed(uint256 x, uint256 y) private {
         if (_seeds[x][y].isPlanted && !_seeds[x][y].isWatered && _seeds[x][y].lastWateredTimestamp + SECONDS_IN_A_DAY <= block.timestamp) {
             delete _seeds[x][y];
         }
     }
 
+/* Bool check to verify if the seed is planted or not at input x,y coordinates */
     function isSeedPlanted(uint256 x, uint256 y) external view returns (bool) {
         return _seeds[x][y].isPlanted;
     }
 
+/* 
+Allows to check whether addWater function has been called upon the seed at (x,y)
+*/
     function isSeedWatered(uint256 x, uint256 y) external view returns (bool) {
         if (_seeds[x][y].isWatered) {
             uint256 lastWateredTime = _seeds[x][y].lastWateredTimestamp;
@@ -87,6 +111,8 @@ contract SeedToken is ERC20 {
         return false;
     }
 
+
+/* function to check the state of the seed if sapling yet or not */
     function isSapling(uint256 x, uint256 y) public view returns (bool) {
         if (_seeds[x][y].isPlanted && block.timestamp >= _seeds[x][y].plantedTimestamp + 2 * SECONDS_IN_A_DAY) {
             return true;
@@ -94,6 +120,7 @@ contract SeedToken is ERC20 {
         return false;
     }
 
+/* function to check whether a seed at x,y is alive and functional or not. */
     function isAlive(uint256 x, uint256 y) public view returns (bool) {
         if (_seeds[x][y].isWatered) {
             uint256 lastWateredTime = _seeds[x][y].lastWateredTimestamp;
@@ -102,6 +129,7 @@ contract SeedToken is ERC20 {
         return false;
     }
 
+/* function to handle and verify the deployed Tree.sol contract. */
    function setTreeContractAddress(address treeContractAddress) external {
     require(_treeContractAddress == address(0), "Tree contract address has already been set.");
     require(treeContractAddress != address(0), "Invalid tree contract address.");
@@ -109,6 +137,7 @@ contract SeedToken is ERC20 {
 }
 
 
+/* this function handles the NFT minting stage of the Tree NFT after checking the required checks.*/
     function generateTreeNFT(uint256 x, uint256 y) external {
         require(_treeContractAddress != address(0), "Tree contract address has not been set.");
         require(_seeds[x][y].isPlanted, "No seed planted at these coordinates.");
